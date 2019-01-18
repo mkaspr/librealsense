@@ -277,6 +277,8 @@ namespace realsense2_camera
         std::map<stream_index_pair, ros::Publisher> _depth_to_other_extrinsics_publishers;
         std::map<stream_index_pair, rs2_extrinsics> _depth_to_other_extrinsics;
 
+        int _laser_power;
+
         std::map<stream_index_pair, bool> _is_frame_arrived;
         const std::string _namespace;
 

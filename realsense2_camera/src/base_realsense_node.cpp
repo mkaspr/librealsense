@@ -406,6 +406,8 @@ void BaseRealSenseNode::getParameters()
     _pnh.param("clip_distance", _clipping_distance, static_cast<float>(-1.0));
     _pnh.param("linear_accel_cov", _linear_accel_cov, static_cast<float>(0.01));
     _pnh.param("hold_back_imu_for_frames", _hold_back_imu_for_frames, HOLD_BACK_IMU_FOR_FRAMES);
+
+    _pnh.param("laser_power", _laser_power, LASER_POWER);
 }
 
 void BaseRealSenseNode::setupDevice()
@@ -464,6 +466,13 @@ void BaseRealSenseNode::setupDevice()
                 _sensors[DEPTH] = elem;
                 _sensors[INFRA1] = elem;
                 _sensors[INFRA2] = elem;
+
+                {
+                  const rs2::option_range range = _sensors[DEPTH].get_option_range(RS2_OPTION_LASER_POWER);
+                  _laser_power = std::max(range.min, std::min(range.max, float(_laser_power)));
+                  _sensors[DEPTH].set_option(RS2_OPTION_LASER_POWER, _laser_power);
+                  _sensors[DEPTH].set_option(RS2_OPTION_EMITTER_ENABLED, _laser_power > 0);
+                }
             }
             else if ("Coded-Light Depth Sensor" == module_name)
             {

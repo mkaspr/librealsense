@@ -61,6 +61,7 @@ namespace realsense2_camera
     const int GYRO_FPS        = 400;
     const int ACCEL_FPS       = 250;
 
+    const int LASER_POWER     = 150;
 
     const bool ENABLE_DEPTH   = true;
     const bool ENABLE_INFRA1  = true;

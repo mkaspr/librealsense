@@ -40,6 +40,7 @@
   <arg name="gyro_fps"            default="1000"/>
   <arg name="accel_fps"           default="1000"/>
   <arg name="enable_imu"          default="true"/>
+  <arg name="laser_power"         default="150"/>
 
   <arg name="enable_pointcloud"   default="false"/>
   <arg name="pointcloud_texture_stream" default="RS2_STREAM_COLOR"/>  <!-- use RS2_STREAM_ANY to avoid using texture -->
@@ -114,6 +115,7 @@
     <param name="gyro_fps"                 type="int"  value="$(arg gyro_fps)"/>
     <param name="accel_fps"                type="int"  value="$(arg accel_fps)"/>
     <param name="enable_imu"               type="bool" value="$(arg enable_imu)"/>
+    <param name="laser_power"              type="int" value="$(arg laser_power)"/>
 
     <param name="base_frame_id"            type="str"  value="$(arg base_frame_id)"/>
     <param name="depth_frame_id"           type="str"  value="$(arg depth_frame_id)"/>

@@ -32,6 +32,7 @@
   <arg name="gyro_fps"            default="400"/>
   <arg name="accel_fps"           default="250"/>
   <arg name="enable_imu"          default="true"/>
+  <arg name="laser_power"         default="150"/>
 
   <arg name="enable_pointcloud"         default="false"/>
   <arg name="pointcloud_texture_stream" default="RS2_STREAM_COLOR"/>
@@ -86,6 +87,7 @@
       <arg name="gyro_fps"                 value="$(arg gyro_fps)"/>
       <arg name="accel_fps"                value="$(arg accel_fps)"/>
       <arg name="enable_imu"               value="$(arg enable_imu)"/>
+      <arg name="laser_power"              value="$(arg laser_power)"/>
 
       <arg name="filters"                  value="$(arg filters)"/>
       <arg name="clip_distance"            value="$(arg clip_distance)"/>
