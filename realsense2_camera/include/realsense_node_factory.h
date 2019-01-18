@@ -18,6 +18,7 @@
 #include <sensor_msgs/point_cloud2_iterator.h>
 #include <constants.h>
 #include <realsense2_camera/Extrinsics.h>
+#include <realsense2_camera/Metadata.h>
 #include <tf/transform_broadcaster.h>
 #include <tf2_ros/static_transform_broadcaster.h>
 #include <sensor_msgs/Imu.h>

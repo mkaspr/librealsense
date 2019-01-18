@@ -196,6 +196,7 @@ namespace realsense2_camera
                           const stream_index_pair& stream,
                           std::map<stream_index_pair, cv::Mat>& images,
                           const std::map<stream_index_pair, ros::Publisher>& info_publishers,
+                          const std::map<stream_index_pair, ros::Publisher>& meta_publishers,
                           const std::map<stream_index_pair, ImagePublisherWithFrequencyDiagnostics>& image_publishers,
                           std::map<stream_index_pair, int>& seq,
                           std::map<stream_index_pair, sensor_msgs::CameraInfo>& camera_info,
@@ -237,6 +238,7 @@ namespace realsense2_camera
         std::shared_ptr<SyncedImuPublisher> _synced_imu_publisher;
         std::map<stream_index_pair, int> _image_format;
         std::map<stream_index_pair, rs2_format> _format;
+        std::map<stream_index_pair, ros::Publisher> _meta_publisher;
         std::map<stream_index_pair, ros::Publisher> _info_publisher;
         std::map<stream_index_pair, cv::Mat> _image;
         std::map<stream_index_pair, std::string> _encoding;
@@ -269,6 +271,7 @@ namespace realsense2_camera
         std::map<stream_index_pair, sensor_msgs::CameraInfo> _depth_aligned_camera_info;
         std::map<stream_index_pair, int> _depth_aligned_seq;
         std::map<stream_index_pair, ros::Publisher> _depth_aligned_info_publisher;
+        std::map<stream_index_pair, ros::Publisher> _depth_aligned_meta_publisher;
         std::map<stream_index_pair, ImagePublisherWithFrequencyDiagnostics> _depth_aligned_image_publishers;
         std::map<stream_index_pair, std::string> _depth_aligned_frame_id;
         std::map<stream_index_pair, ros::Publisher> _depth_to_other_extrinsics_publishers;

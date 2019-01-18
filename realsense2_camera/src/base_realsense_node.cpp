@@ -537,17 +537,19 @@ void BaseRealSenseNode::setupPublishers()
     {
         if (_enable[stream])
         {
-            std::stringstream image_raw, camera_info;
+            std::stringstream image_raw, camera_info, metadata;
             bool rectified_image = false;
             if (stream == DEPTH || stream == INFRA1 || stream == INFRA2)
                 rectified_image = true;
 
             image_raw << _stream_name[stream] << "/image_" << ((rectified_image)?"rect_":"") << "raw";
             camera_info << _stream_name[stream] << "/camera_info";
+            metadata << _stream_name[stream] << "/metadata";
 
             std::shared_ptr<FrequencyDiagnostics> frequency_diagnostics(new FrequencyDiagnostics(_fps[stream], _stream_name[stream], _serial_no));
             _image_publishers[stream] = {image_transport.advertise(image_raw.str(), 1), frequency_diagnostics};
             _info_publisher[stream] = _node_handle.advertise<sensor_msgs::CameraInfo>(camera_info.str(), 1);
+            _meta_publisher[stream] = _node_handle.advertise<Metadata>(metadata.str(), 1);
 
             if (_align_depth && (stream != DEPTH))
             {
@@ -655,6 +657,7 @@ void BaseRealSenseNode::publishAlignedDepthToOthers(rs2::frameset frames, const 
             publishFrame(aligned_depth_frame, t, sip,
                          _depth_aligned_image,
                          _depth_aligned_info_publisher,
+                         _depth_aligned_meta_publisher,
                          _depth_aligned_image_publishers, _depth_aligned_seq,
                          _depth_aligned_camera_info, _optical_frame_id,
                          _depth_aligned_encoding);
@@ -1224,6 +1227,7 @@ void BaseRealSenseNode::setupStreams()
                                      sip,
                                      _image,
                                      _info_publisher,
+                                     _meta_publisher,
                                      _image_publishers, _seq,
                                      _camera_info, _optical_frame_id,
                                      _encoding);
@@ -1248,6 +1252,7 @@ void BaseRealSenseNode::setupStreams()
                                  sip,
                                  _image,
                                  _info_publisher,
+                                 _meta_publisher,
                                  _image_publishers, _seq,
                                  _camera_info, _optical_frame_id,
                                  _encoding);
@@ -1904,6 +1909,7 @@ void BaseRealSenseNode::publishFrame(rs2::frame f, const ros::Time& t,
                                      const stream_index_pair& stream,
                                      std::map<stream_index_pair, cv::Mat>& images,
                                      const std::map<stream_index_pair, ros::Publisher>& info_publishers,
+                                     const std::map<stream_index_pair, ros::Publisher>& meta_publishers,
                                      const std::map<stream_index_pair, ImagePublisherWithFrequencyDiagnostics>& image_publishers,
                                      std::map<stream_index_pair, int>& seq,
                                      std::map<stream_index_pair, sensor_msgs::CameraInfo>& camera_info,
@@ -1935,8 +1941,10 @@ void BaseRealSenseNode::publishFrame(rs2::frame f, const ros::Time& t,
 
     ++(seq[stream]);
     auto& info_publisher = info_publishers.at(stream);
+    auto& meta_publisher = meta_publishers.at(stream);
     auto& image_publisher = image_publishers.at(stream);
     if(0 != info_publisher.getNumSubscribers() ||
+       0 != meta_publisher.getNumSubscribers() ||
        0 != image_publisher.first.getNumSubscribers())
     {
         sensor_msgs::ImagePtr img;
@@ -1953,6 +1961,9 @@ void BaseRealSenseNode::publishFrame(rs2::frame f, const ros::Time& t,
         cam_info.header.stamp = t;
         cam_info.header.seq = seq[stream];
         info_publisher.publish(cam_info);
+
+        Metadata metadata;
+        meta_publisher.publish(metadata);
 
         image_publisher.first.publish(img);
         image_publisher.second->update();
