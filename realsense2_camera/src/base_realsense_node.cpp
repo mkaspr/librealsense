@@ -609,14 +609,14 @@ void BaseRealSenseNode::setupPublishers()
         {
             _imu_publishers[GYRO] = _node_handle.advertise<sensor_msgs::Imu>("gyro/sample", 100);
             _info_publisher[GYRO] = _node_handle.advertise<IMUInfo>("gyro/imu_info", 1, true);
-            _meta_publisher[GYRO] = _node_handle.advertise<ImageMetadata>("gyro/metdata", 1, true);
+            _meta_publisher[GYRO] = _node_handle.advertise<ImuMetadata>("gyro/metdata", 1, true);
         }
 
         if (_enable[ACCEL])
         {
             _imu_publishers[ACCEL] = _node_handle.advertise<sensor_msgs::Imu>("accel/sample", 100);
             _info_publisher[ACCEL] = _node_handle.advertise<IMUInfo>("accel/imu_info", 1, true);
-            _meta_publisher[ACCEL] = _node_handle.advertise<ImageMetadata>("accel/metdata", 1, true);
+            _meta_publisher[ACCEL] = _node_handle.advertise<ImuMetadata>("accel/metdata", 1, true);
         }
     }
 }
@@ -1034,7 +1034,8 @@ void BaseRealSenseNode::imu_callback(rs2::frame frame)
 
     auto stream_index = (stream == GYRO.first)?GYRO:ACCEL;
     if (0 != _info_publisher[stream_index].getNumSubscribers() ||
-        0 != _imu_publishers[stream_index].getNumSubscribers())
+        0 != _imu_publishers[stream_index].getNumSubscribers() ||
+        0 != _meta_publisher[stream_index].getNumSubscribers())
     {
         double elapsed_camera_ms = (/*ms*/ frame.get_timestamp() - /*ms*/ _camera_time_base) / 1000.0;
         ros::Time t(_ros_time_base.toSec() + elapsed_camera_ms);
@@ -1061,10 +1062,19 @@ void BaseRealSenseNode::imu_callback(rs2::frame frame)
             imu_msg.linear_acceleration.y = crnt_reading.y;
             imu_msg.linear_acceleration.z = crnt_reading.z;
         }
+
         _seq[stream_index] += 1;
         imu_msg.header.seq = _seq[stream_index];
         imu_msg.header.stamp = t;
         _imu_publishers[stream_index].publish(imu_msg);
+
+        ImuMetadata metadata;
+        metadata.header.seq = _seq[stream_index];
+        metadata.header.stamp = t;
+        metadata.header.frame_id = _optical_frame_id[stream_index];
+        metadata.time_of_arrival = frame.get_frame_metadata(RS2_FRAME_METADATA_TIME_OF_ARRIVAL);
+        _meta_publisher[stream_index].publish(metadata);
+
         ROS_DEBUG("Publish %s stream", rs2_stream_to_string(frame.get_profile().stream_type()));
     }
 }
@@ -1968,6 +1978,7 @@ void BaseRealSenseNode::publishFrame(rs2::frame f, const ros::Time& t,
         ImageMetadata metadata;
         metadata.header.stamp = t;
         metadata.header.seq = seq[stream];
+        metadata.header.frame_id = optical_frame_id.at(stream);
 
         metadata.frame_counter = f.supports_frame_metadata(RS2_FRAME_METADATA_FRAME_COUNTER) ? f.get_frame_metadata(RS2_FRAME_METADATA_FRAME_COUNTER) : 0;
         metadata.frame_timestamp = f.supports_frame_metadata(RS2_FRAME_METADATA_FRAME_TIMESTAMP) ? f.get_frame_metadata(RS2_FRAME_METADATA_FRAME_TIMESTAMP) : 0;
