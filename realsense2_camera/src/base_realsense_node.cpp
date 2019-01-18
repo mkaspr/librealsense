@@ -549,7 +549,7 @@ void BaseRealSenseNode::setupPublishers()
             std::shared_ptr<FrequencyDiagnostics> frequency_diagnostics(new FrequencyDiagnostics(_fps[stream], _stream_name[stream], _serial_no));
             _image_publishers[stream] = {image_transport.advertise(image_raw.str(), 1), frequency_diagnostics};
             _info_publisher[stream] = _node_handle.advertise<sensor_msgs::CameraInfo>(camera_info.str(), 1);
-            _meta_publisher[stream] = _node_handle.advertise<Metadata>(metadata.str(), 1);
+            _meta_publisher[stream] = _node_handle.advertise<ImageMetadata>(metadata.str(), 1);
 
             if (_align_depth && (stream != DEPTH))
             {
@@ -609,12 +609,14 @@ void BaseRealSenseNode::setupPublishers()
         {
             _imu_publishers[GYRO] = _node_handle.advertise<sensor_msgs::Imu>("gyro/sample", 100);
             _info_publisher[GYRO] = _node_handle.advertise<IMUInfo>("gyro/imu_info", 1, true);
+            _meta_publisher[GYRO] = _node_handle.advertise<ImageMetadata>("gyro/metdata", 1, true);
         }
 
         if (_enable[ACCEL])
         {
             _imu_publishers[ACCEL] = _node_handle.advertise<sensor_msgs::Imu>("accel/sample", 100);
             _info_publisher[ACCEL] = _node_handle.advertise<IMUInfo>("accel/imu_info", 1, true);
+            _meta_publisher[ACCEL] = _node_handle.advertise<ImageMetadata>("accel/metdata", 1, true);
         }
     }
 }
@@ -1943,6 +1945,7 @@ void BaseRealSenseNode::publishFrame(rs2::frame f, const ros::Time& t,
     auto& info_publisher = info_publishers.at(stream);
     auto& meta_publisher = meta_publishers.at(stream);
     auto& image_publisher = image_publishers.at(stream);
+
     if(0 != info_publisher.getNumSubscribers() ||
        0 != meta_publisher.getNumSubscribers() ||
        0 != image_publisher.first.getNumSubscribers())
@@ -1962,7 +1965,40 @@ void BaseRealSenseNode::publishFrame(rs2::frame f, const ros::Time& t,
         cam_info.header.seq = seq[stream];
         info_publisher.publish(cam_info);
 
-        Metadata metadata;
+        ImageMetadata metadata;
+        metadata.header.stamp = t;
+        metadata.header.seq = seq[stream];
+
+        metadata.frame_counter = f.supports_frame_metadata(RS2_FRAME_METADATA_FRAME_COUNTER) ? f.get_frame_metadata(RS2_FRAME_METADATA_FRAME_COUNTER) : 0;
+        metadata.frame_timestamp = f.supports_frame_metadata(RS2_FRAME_METADATA_FRAME_TIMESTAMP) ? f.get_frame_metadata(RS2_FRAME_METADATA_FRAME_TIMESTAMP) : 0;
+        metadata.sensor_timestamp = f.supports_frame_metadata(RS2_FRAME_METADATA_SENSOR_TIMESTAMP) ? f.get_frame_metadata(RS2_FRAME_METADATA_SENSOR_TIMESTAMP) : 0;
+        metadata.actual_exposure = f.supports_frame_metadata(RS2_FRAME_METADATA_ACTUAL_EXPOSURE) ? f.get_frame_metadata(RS2_FRAME_METADATA_ACTUAL_EXPOSURE) : 0;
+        metadata.gain_level = f.supports_frame_metadata(RS2_FRAME_METADATA_GAIN_LEVEL) ? f.get_frame_metadata(RS2_FRAME_METADATA_GAIN_LEVEL) : 0;
+        metadata.auto_exposure = f.supports_frame_metadata(RS2_FRAME_METADATA_AUTO_EXPOSURE) ? f.get_frame_metadata(RS2_FRAME_METADATA_AUTO_EXPOSURE) : 0;
+        metadata.white_balance = f.supports_frame_metadata(RS2_FRAME_METADATA_WHITE_BALANCE) ? f.get_frame_metadata(RS2_FRAME_METADATA_WHITE_BALANCE) : 0;
+        metadata.time_of_arrival = f.supports_frame_metadata(RS2_FRAME_METADATA_TIME_OF_ARRIVAL) ? f.get_frame_metadata(RS2_FRAME_METADATA_TIME_OF_ARRIVAL) : 0;
+        metadata.temperature = f.supports_frame_metadata(RS2_FRAME_METADATA_TEMPERATURE) ? f.get_frame_metadata(RS2_FRAME_METADATA_TEMPERATURE) : 0;
+        metadata.backend_timestamp = f.supports_frame_metadata(RS2_FRAME_METADATA_BACKEND_TIMESTAMP) ? f.get_frame_metadata(RS2_FRAME_METADATA_BACKEND_TIMESTAMP) : 0;
+        metadata.actual_fps = f.supports_frame_metadata(RS2_FRAME_METADATA_ACTUAL_FPS) ? f.get_frame_metadata(RS2_FRAME_METADATA_ACTUAL_FPS) : 0;
+        metadata.frame_laser_power = f.supports_frame_metadata(RS2_FRAME_METADATA_FRAME_LASER_POWER) ? f.get_frame_metadata(RS2_FRAME_METADATA_FRAME_LASER_POWER) : 0;
+        metadata.frame_laser_power_mode = f.supports_frame_metadata(RS2_FRAME_METADATA_FRAME_LASER_POWER_MODE) ? f.get_frame_metadata(RS2_FRAME_METADATA_FRAME_LASER_POWER_MODE) : 0;
+        metadata.exposure_priority = f.supports_frame_metadata(RS2_FRAME_METADATA_EXPOSURE_PRIORITY) ? f.get_frame_metadata(RS2_FRAME_METADATA_EXPOSURE_PRIORITY) : 0;
+        metadata.exposure_roi_left = f.supports_frame_metadata(RS2_FRAME_METADATA_EXPOSURE_ROI_LEFT) ? f.get_frame_metadata(RS2_FRAME_METADATA_EXPOSURE_ROI_LEFT) : 0;
+        metadata.exposure_roi_right = f.supports_frame_metadata(RS2_FRAME_METADATA_EXPOSURE_ROI_RIGHT) ? f.get_frame_metadata(RS2_FRAME_METADATA_EXPOSURE_ROI_RIGHT) : 0;
+        metadata.exposure_roi_top = f.supports_frame_metadata(RS2_FRAME_METADATA_EXPOSURE_ROI_TOP) ? f.get_frame_metadata(RS2_FRAME_METADATA_EXPOSURE_ROI_TOP) : 0;
+        metadata.exposure_roi_bottom = f.supports_frame_metadata(RS2_FRAME_METADATA_EXPOSURE_ROI_BOTTOM) ? f.get_frame_metadata(RS2_FRAME_METADATA_EXPOSURE_ROI_BOTTOM) : 0;
+        metadata.brightness = f.supports_frame_metadata(RS2_FRAME_METADATA_BRIGHTNESS) ? f.get_frame_metadata(RS2_FRAME_METADATA_BRIGHTNESS) : 0;
+        metadata.contrast = f.supports_frame_metadata(RS2_FRAME_METADATA_CONTRAST) ? f.get_frame_metadata(RS2_FRAME_METADATA_CONTRAST) : 0;
+        metadata.saturation = f.supports_frame_metadata(RS2_FRAME_METADATA_SATURATION) ? f.get_frame_metadata(RS2_FRAME_METADATA_SATURATION) : 0;
+        metadata.sharpness = f.supports_frame_metadata(RS2_FRAME_METADATA_SHARPNESS) ? f.get_frame_metadata(RS2_FRAME_METADATA_SHARPNESS) : 0;
+        metadata.auto_white_balance_temperature = f.supports_frame_metadata(RS2_FRAME_METADATA_AUTO_WHITE_BALANCE_TEMPERATURE) ? f.get_frame_metadata(RS2_FRAME_METADATA_AUTO_WHITE_BALANCE_TEMPERATURE) : 0;
+        metadata.backlight_compensation = f.supports_frame_metadata(RS2_FRAME_METADATA_BACKLIGHT_COMPENSATION) ? f.get_frame_metadata(RS2_FRAME_METADATA_BACKLIGHT_COMPENSATION) : 0;
+        metadata.hue = f.supports_frame_metadata(RS2_FRAME_METADATA_HUE) ? f.get_frame_metadata(RS2_FRAME_METADATA_HUE) : 0;
+        metadata.gamma = f.supports_frame_metadata(RS2_FRAME_METADATA_GAMMA) ? f.get_frame_metadata(RS2_FRAME_METADATA_GAMMA) : 0;
+        metadata.manual_white_balance = f.supports_frame_metadata(RS2_FRAME_METADATA_MANUAL_WHITE_BALANCE) ? f.get_frame_metadata(RS2_FRAME_METADATA_MANUAL_WHITE_BALANCE) : 0;
+        metadata.power_line_frequency = f.supports_frame_metadata(RS2_FRAME_METADATA_POWER_LINE_FREQUENCY) ? f.get_frame_metadata(RS2_FRAME_METADATA_POWER_LINE_FREQUENCY) : 0;
+        metadata.low_light_compensation = f.supports_frame_metadata(RS2_FRAME_METADATA_LOW_LIGHT_COMPENSATION) ? f.get_frame_metadata(RS2_FRAME_METADATA_LOW_LIGHT_COMPENSATION) : 0;
+
         meta_publisher.publish(metadata);
 
         image_publisher.first.publish(img);

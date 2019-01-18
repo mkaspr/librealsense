@@ -51,7 +51,8 @@ add_message_files(
     FILES
     IMUInfo.msg
     Extrinsics.msg
-    Metadata.msg
+    ImageMetadata.msg
+    ImuMetadata.msg
     )
 
 generate_messages(
